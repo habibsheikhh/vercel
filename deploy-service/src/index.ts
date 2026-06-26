@@ -3,9 +3,11 @@ import { copyFinalDist, downloadS3Folder } from "./aws";
 import { buildProject } from "./utils";
 
 const subscriber = createClient();
+const publisher = createClient();
 
 async function main() {
     await subscriber.connect();
+    await publisher.connect();
 
     while (true) {  // pulls id's on redis queue infinetely
         const response = await subscriber.brPop("build-queue", 0);
@@ -16,6 +18,8 @@ async function main() {
         console.log("downloaded")
         await buildProject(id);
         await copyFinalDist(id);
+
+        publisher.hSet("status", id, "deployed")
     }
 }
 
